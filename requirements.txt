@@ -48,7 +48,6 @@ pyngrok==7.2.3
 pyparsing==3.2.1
 python-dateutil==2.9.0.post0
 pytz==2025.1
-pywin32==309
 PyYAML==6.0.2
 pyzmq==26.3.0
 scikit-learn==1.6.1
