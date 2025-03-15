@@ -1,10 +1,13 @@
 from flask import Flask, request, jsonify # type: ignore
 import joblib # type: ignore
 import numpy as np # type: ignore
+from flask_cors import CORS # type: ignore
 
 model = joblib.load("car_price_model.pkl")
 
 app = Flask(__name__)
+
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 @app.route('/')
 def home():
