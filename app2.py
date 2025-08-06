@@ -1,17 +1,29 @@
-from fastapi import FastAPI
-import joblib
-import numpy as np
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException
+import joblib # type: ignore
+import numpy as np # type: ignore
+from pydantic import BaseModel, validator
 import uvicorn
-from pyngrok import ngrok
+from pyngrok import ngrok # type: ignore
+from typing import List
+import os
 
-# Load the trained model
-model = joblib.load("car_price_model.pkl")
+# Load the trained model with error handling
+try:
+    model = joblib.load("car_price_model.pkl")
+except FileNotFoundError:
+    print("Error: car_price_model.pkl not found!")
+    model = None
 
-app = FastAPI()
+app = FastAPI(title="Car Price Prediction API", version="1.0.0")
 
 class CarFeatures(BaseModel):
-    features: list
+    features: List[float]  # More specific typing
+    
+    @validator('features')
+    def validate_features(cls, v):
+        if len(v) == 0:
+            raise ValueError('Features list cannot be empty')
+        return v
 
 @app.get("/")
 def home():
@@ -19,12 +31,15 @@ def home():
 
 @app.post("/predict")
 def predict(data: CarFeatures):
+    if model is None:
+        raise HTTPException(status_code=500, detail="Model not loaded")
+    
     try:
         features = np.array(data.features).reshape(1, -1)
         prediction = model.predict(features)
-        return {"predicted_price": prediction[0]}
+        return {"predicted_price": float(prediction[0])}
     except Exception as e:
-        return {"error": str(e)}
+        raise HTTPException(status_code=400, detail=f"Prediction error: {str(e)}")
 
 def start_ngrok():
     url = ngrok.connect(8000).public_url
